@@ -1097,6 +1097,10 @@ class AnvilChunk(InfdevChunk):
     def _decompressChunk(self):
         super(AnvilChunk, self)._decompressChunk()
 
+        # FIXME: Hack to not load data I definitely don't want when
+        # doing a dumpSigns.
+        return
+
         self._Blocks = zeros((16, 16, self.Height), 'uint8')  # xxx uint16?
         self._Data = zeros((16, 16, self.Height), 'uint8')
         self._BlockLight = zeros((16, 16, self.Height), 'uint8')
@@ -2702,6 +2706,7 @@ class MCInfdevOldLevel(ChunkedLevelMixin, EntityLevel):
 
     def chunkDidUnload(self, chunk):
         self.loadedChunkQueue.discard(chunk)
+        del self._loadedChunks[chunk.chunkPosition]
 
     def chunkDidLoad(self, chunk):
         if chunk not in self.loadedChunkQueue:
