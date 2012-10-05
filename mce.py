@@ -113,6 +113,7 @@ class mce(object):
         "removeentities",
         "dumpsigns",
         "dumpchests",
+        "dumppets",
 
         "createchunks",
         "deletechunks",
@@ -639,6 +640,70 @@ class mce(object):
             chunk.unload()
 
         print "Dumped {0} signs to {1}".format(signCount, filename)
+
+        outFile.close()
+
+    def _dumppets(self, command):
+        """
+    dumpPets [ <filename> ]
+
+    Saves the location and details of every mob that can be/is tamed
+    to a text file.  With no filename, saves signs to <worldname>.pets
+
+    Output is newline-delimited, with 1 line per mob in the following
+    format:
+
+        [<x>, <y>, <z>] <mob type> <health> <owner>
+
+    where <mob type> is the internal name for the mob (note that an
+    ocelot is internally called "Ozelot"), <health> is recorded in
+    half hearts (e.g. 10 means 5 hearts), and <owner> is "(none)" for
+    an un-tamed mob.
+
+    e.g.:
+
+        [-231.0, 4.0, -1395.7] Ozelot 10 Notch
+
+    Coordinates are ordered the same as point inputs:
+        [North/South, Down/Up, East/West]
+    """
+        if len(command):
+            filename = command[0]
+        else:
+            filename = self.level.displayName + ".pets"
+
+        # We probably won't have any non-ASCII characters, but use the
+        # same coding as for dumpSigns.
+        outFile = codecs.open(filename, "w", encoding='utf-8-sig')
+
+        print "Dumping pets..."
+        petCount = 0
+
+        for i, cPos in enumerate(self.level.allChunks):
+            try:
+                chunk = self.level.getChunk(*cPos)
+            except mclevelbase.ChunkMalformed:
+                continue
+
+            for entity in chunk.Entities:
+                if entity["id"].value in ["Ozelot", "Wolf"]:
+
+                    owner = entity["Owner"].value
+                    if owner is "":
+                        owner = "(none)"
+                    petCount += 1
+                    pos_str = ", ".join(["%.1f" % coord.value for coord in entity["Pos"].value])
+                    outFile.write(u"[{0}] {1} {2} {3}\n".format(pos_str,
+                                                                entity["id"].value,
+                                                                entity["Health"].value,
+                                                                owner))
+
+            if i % 100 == 0:
+                print "Chunk {0}...".format(i)
+
+            chunk.unload()
+
+        print "Dumped {0} pets to {1}".format(petCount, filename)
 
         outFile.close()
 
